@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Sparkles, ThumbsUp, ThumbsDown, Copy, Check, Pencil } from 'lucide-react';
+import { User, Sparkles, ThumbsUp, ThumbsDown, Copy, Check, Pencil, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
@@ -48,19 +48,7 @@ export function ChatMessage({ message, onEdit, onFeedback }: ChatMessageProps) {
         isUser ? "flex-row-reverse" : "flex-row"
       )}
     >
-      {/* Avatar */}
-      <div
-        className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isUser ? "bg-primary" : "bg-accent"
-        )}
-      >
-        {isUser ? (
-          <User className="w-4 h-4 text-primary-foreground" />
-        ) : (
-          <Sparkles className="w-4 h-4 text-accent-foreground" />
-        )}
-      </div>
+
 
       {/* Content */}
       <div
@@ -133,6 +121,21 @@ export function ChatMessage({ message, onEdit, onFeedback }: ChatMessageProps) {
             >
               {message.content}
             </ReactMarkdown>
+
+            {/* Render uploaded images */}
+            {message.images && message.images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {message.images.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt={`Attached ${idx + 1}`}
+                    className="max-w-[200px] max-h-[200px] object-cover rounded-lg border border-border shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                    onClick={() => window.open(img, '_blank')}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -200,14 +203,21 @@ export function ChatMessage({ message, onEdit, onFeedback }: ChatMessageProps) {
           )}
         </div>
 
-        {/* Sources - Commented out as requested
+        {/* Sources
         {message.sources && message.sources.length > 0 && (
           <div className="mt-3 w-full space-y-2">
             <div className="flex items-center gap-2 px-1">
               <div className="h-px flex-1 bg-border" />
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Sources
-              </span>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted border border-border">
+                {message.isWebSearch ? (
+                  <Globe className="w-3 h-3 text-primary" />
+                ) : (
+                  <Sparkles className="w-3 h-3 text-primary" />
+                )}
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {message.isWebSearch ? 'Web Search' : 'Internal Sources'}
+                </span>
+              </div>
               <div className="h-px flex-1 bg-border" />
             </div>
             <div className="space-y-2">
@@ -216,8 +226,8 @@ export function ChatMessage({ message, onEdit, onFeedback }: ChatMessageProps) {
               ))}
             </div>
           </div>
-        )}
-        */}
+        )} */}
+
       </div>
     </div>
   );

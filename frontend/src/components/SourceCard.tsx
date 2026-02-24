@@ -11,7 +11,8 @@ interface SourceCardProps {
 export function SourceCard({ source, index }: SourceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const isUrl = source.documentName.startsWith('http');
+  const isUrl = !!source.url || source.documentName.startsWith('http');
+  const displayUrl = source.url || (source.documentName.startsWith('http') ? source.documentName : null);
 
   const confidenceColor =
     source.confidence >= 0.8 ? 'text-success' :
@@ -19,9 +20,6 @@ export function SourceCard({ source, index }: SourceCardProps) {
         'text-muted-foreground';
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // If it's a URL and we're clicking the "View in document" area or the header, open it
-    // But we still want to toggle expansion if clicking the card generally
-    // To keep it simple, let's just make the "View in document" part a real link
     if (!isExpanded) {
       setIsExpanded(true);
     }
@@ -29,8 +27,16 @@ export function SourceCard({ source, index }: SourceCardProps) {
 
   const handleViewSource = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isUrl) {
-      window.open(source.documentName, '_blank', 'noopener,noreferrer');
+    if (displayUrl) {
+      window.open(displayUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const getHostname = (urlStr: string) => {
+    try {
+      return new URL(urlStr).hostname;
+    } catch (e) {
+      return urlStr;
     }
   };
 
@@ -38,9 +44,8 @@ export function SourceCard({ source, index }: SourceCardProps) {
     <div
       onClick={handleCardClick}
       className={cn(
-        "w-full text-left rounded-lg border border-source-border bg-source p-3 transition-all duration-250 cursor-pointer",
-        "hover:border-source-accent/50 hover:shadow-soft",
-        isExpanded && "border-source-accent"
+        "w-full text-left p-1 transition-all duration-250 cursor-pointer",
+        "hover:bg-accent/10",
       )}
     >
       <div className="flex items-start gap-3">
@@ -57,8 +62,9 @@ export function SourceCard({ source, index }: SourceCardProps) {
             <div className="flex items-center gap-2 min-w-0">
               <FileText className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground truncate">
-                {isUrl ? new URL(source.documentName).hostname : source.documentName}
+                {displayUrl ? getHostname(displayUrl) : source.documentName}
               </span>
+
               {source.pageNumber && (
                 <span className="text-xs text-muted-foreground flex-shrink-0">
                   p.{source.pageNumber}
@@ -66,9 +72,7 @@ export function SourceCard({ source, index }: SourceCardProps) {
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className={cn("text-xs font-medium", confidenceColor)}>
-                {Math.round(source.confidence * 100)}%
-              </span>
+
               <button
                 onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                 className="p-0.5 hover:bg-accent rounded"
@@ -99,12 +103,12 @@ export function SourceCard({ source, index }: SourceCardProps) {
                 onClick={handleViewSource}
                 className="text-xs text-primary hover:underline flex items-center gap-1.5"
               >
-                <span>{isUrl ? 'Open website' : 'View in document'}</span>
+                <span>{displayUrl ? 'Open website' : 'View in document'}</span>
                 <ExternalLink className="w-3 h-3" />
               </button>
-              {isUrl && (
+              {displayUrl && (
                 <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                  {source.documentName}
+                  {displayUrl}
                 </span>
               )}
             </div>

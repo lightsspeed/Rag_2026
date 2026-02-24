@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input';
 
 interface SidebarProps {
   conversations: ChatConversation[];
-  activeConversationId: string;
+  activeConversationId: string | null;
   onSelectConversation: (id: string) => void;
   onNewConversation: () => void;
   onOpenSearch: () => void;
@@ -93,7 +93,7 @@ export function Sidebar({
     <>
       <aside className={cn(
         "border-r border-border bg-sidebar flex flex-col h-full transition-all duration-300 ease-out",
-        isCollapsed ? "w-16" : "w-72"
+        isCollapsed ? "w-16" : "w-80"
       )}>
         {/* New Chat Button */}
         <div className="p-3 space-y-2">
@@ -162,62 +162,42 @@ export function Sidebar({
                     <span className="truncate text-sm">{conv.title}</span>
                   </button>
 
-                  {/* 3-dot dropdown menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className={cn(
-                          "absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center rounded-lg transition-all z-20",
-                          conv.id === activeConversationId
-                            ? "opacity-100 text-foreground bg-black/5 dark:bg-white/10"
-                            : "opacity-0 group-hover:opacity-60 hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                        }}
-                      >
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      side="bottom"
-                      sideOffset={4}
-                      className="w-40 bg-popover border border-border shadow-lg z-[100]"
+                  {/* Direct Action Buttons */}
+                  <div className={cn(
+                    "absolute right-14 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gradient-to-l from-sidebar-accent via-sidebar-accent/80 to-transparent pl-6 pr-2 py-1 z-50",
+                    "opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  )}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTogglePinConversation(conv.id);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors"
+                      title={conv.isPinned ? "Unpin" : "Pin"}
                     >
-                      <DropdownMenuItem
-                        onClick={() => onTogglePinConversation(conv.id)}
-                        className="cursor-pointer gap-2"
-                      >
-                        {conv.isPinned ? (
-                          <>
-                            <PinOff className="h-4 w-4" />
-                            <span>Unpin</span>
-                          </>
-                        ) : (
-                          <>
-                            <Pin className="h-4 w-4" />
-                            <span>Pin</span>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleRenameClick(conv)}
-                        className="cursor-pointer gap-2"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        <span>Rename</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDeleteClick(conv.id)}
-                        className="cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      {conv.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRenameClick(conv);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-blue-500 transition-colors"
+                      title="Rename"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(conv.id);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -251,25 +231,34 @@ export function Sidebar({
         )}
 
         {/* Logo Section with Toggle */}
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border">
           <div className={cn(
             "flex items-center",
-            isCollapsed ? "flex-col gap-2" : "gap-3 px-2"
+            isCollapsed ? "flex-col gap-2" : "gap-4 px-2"
           )}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 animate-glow">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
+            <div className="flex items-center justify-center">
+              <img
+                src="/GETIT logo black.png"
+                alt="GetIT Logo"
+                className={cn("w-auto dark:hidden", isCollapsed ? "h-8" : "h-16")}
+              />
+              <img
+                src="/GETIT logo white.png"
+                alt="GetIT Logo"
+                className={cn("w-auto hidden dark:block", isCollapsed ? "h-8" : "h-16")}
+              />
             </div>
             {!isCollapsed && (
               <div className="flex-1">
-                <h3 className="font-semibold text-sm text-sidebar-foreground">IntelliQuery</h3>
-                <p className="text-xs text-muted-foreground">AI-Powered RAG</p>
+                <h3 className="font-semibold text-base text-sidebar-foreground">GetIT GenAI</h3>
+                <p className="text-sm text-muted-foreground">AI-Powered RAG</p>
               </div>
             )}
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggle}
-              className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+              className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent"
             >
               {isCollapsed ? (
                 <ChevronRight className="h-4 w-4" />

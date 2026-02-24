@@ -2,9 +2,11 @@ import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Send, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/use-toast';
 
 interface ChatInputProps {
   onSend: (message: string, images?: string[]) => void;
+  onUpload?: (files: File[]) => Promise<any>;
   isLoading?: boolean;
   disabled?: boolean;
   value?: string;
@@ -12,7 +14,7 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
-export function ChatInput({ onSend, isLoading, disabled, value, onChange, placeholder }: ChatInputProps) {
+export function ChatInput({ onSend, onUpload, isLoading, disabled, value, onChange, placeholder }: ChatInputProps) {
   const [internalMessage, setInternalMessage] = useState(value || '');
   const [images, setImages] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -94,20 +96,20 @@ export function ChatInput({ onSend, isLoading, disabled, value, onChange, placeh
       <div className="p-4 border-t border-border bg-gradient-to-t from-card to-transparent">
         {/* Image Previews */}
         {images.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-2 mb-3 p-2 bg-muted/30 rounded-xl border border-border/50 animate-in fade-in slide-in-from-bottom-2">
             {images.map((img, idx) => (
-              <div key={idx} className="relative group">
+              <div key={idx} className="relative group shrink-0">
                 <img
                   src={img}
                   alt={`Upload ${idx + 1}`}
-                  className="w-16 h-16 object-cover rounded-lg border border-border"
+                  className="w-20 h-20 object-cover rounded-xl border-2 border-primary/20 shadow-sm"
                 />
                 <button
                   type="button"
                   onClick={() => removeImage(idx)}
-                  className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-lg hover:bg-destructive/90 transition-all scale-0 group-hover:scale-100"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
@@ -124,16 +126,20 @@ export function ChatInput({ onSend, isLoading, disabled, value, onChange, placeh
             onChange={handleImageUpload}
             className="hidden"
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
-            className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
-          >
-            <ImagePlus className="w-5 h-5" />
-          </Button>
+
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+              className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+              title="Upload images"
+            >
+              <ImagePlus className="w-5 h-5" />
+            </Button>
+          </div>
 
           {/* Text Input */}
           <textarea
@@ -171,7 +177,7 @@ export function ChatInput({ onSend, isLoading, disabled, value, onChange, placeh
 
         {/* Keyboard hint */}
         <p className="text-xs text-muted-foreground text-center mt-3">
-          IntelliQuery can make mistakes. Consider checking important information.
+          GetIT GenAI can make mistakes. Consider checking important information.
         </p>
       </div>
     </form>

@@ -17,17 +17,11 @@ export function useChat() {
     } catch (e) {
       console.error('Failed to parse conversations from localStorage', e);
     }
-    return [{
-      id: '1',
-      title: 'New conversation',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }];
+    return [];
   });
 
-  const [activeConversationId, setActiveConversationId] = useState(() => {
-    return localStorage.getItem('chat_active_id') || '1';
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
+    return localStorage.getItem('chat_active_id');
   });
 
   // Persist conversations
@@ -59,21 +53,45 @@ export function useChat() {
       images,
     };
 
+    // Determine the ID to use (current active ID or a new one)
+    const currentId = activeConversationId || Date.now().toString();
+
+    // If we're starting a new conversation, set it as active immediately
+    if (!activeConversationId) {
+      setActiveConversationId(currentId);
+    }
+
     if (!skipAddUser) {
-      setConversations((prev) =>
-        prev.map((conv) => {
-          if (conv.id === activeConversationId) {
-            const isFirstMessage = conv.messages.length === 0;
-            return {
-              ...conv,
-              messages: [...conv.messages, userMessage],
-              title: isFirstMessage ? 'Generating title...' : conv.title,
-              updatedAt: new Date(),
-            };
-          }
-          return conv;
-        })
-      );
+      setConversations((prev) => {
+        // Check if conversation exists
+        const exists = prev.some(c => c.id === currentId);
+
+        if (exists) {
+          return prev.map((conv) => {
+            if (conv.id === currentId) {
+              const isFirstMessage = conv.messages.length === 0;
+              return {
+                ...conv,
+                messages: [...conv.messages, userMessage],
+                title: isFirstMessage ? 'Generating title...' : conv.title,
+                updatedAt: new Date(),
+              };
+            }
+            return conv;
+          });
+        } else {
+          // Create new conversation on first message
+          const newConv: ChatConversation = {
+            id: currentId,
+            title: 'New conversation',
+            messages: [userMessage],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isPinned: false,
+          };
+          return [newConv, ...prev];
+        }
+      });
     }
 
     setIsLoading(true);
@@ -94,7 +112,7 @@ export function useChat() {
     // Add empty assistant message
     setConversations((prev) =>
       prev.map((conv) =>
-        conv.id === activeConversationId
+        conv.id === currentId
           ? {
             ...conv,
             messages: [...conv.messages, assistantMessage],
@@ -106,7 +124,10 @@ export function useChat() {
 
     // Prepare chat history for API
     const chatHistory: ApiMessage[] = [];
-    const conv = conversations.find((c) => c.id === activeConversationId);
+    // Note: 'conversations' state here might be stale for the NEW conversation case,
+    // but for history we only care about PAST messages anyway, which a new empty chat doesn't have.
+    // So looking up by ID in current 'conversations' is fine for history.
+    const conv = conversations.find((c) => c.id === currentId);
     if (conv) {
       // Get all messages except the one we just added
       const historyMessages = conv.messages.slice(0, -1);
@@ -124,27 +145,31 @@ export function useChat() {
     try {
       await api.streamQuery(
         content,
-        activeConversationId,
+        currentId,
         // onMetadata
         (metadata) => {
           // Convert backend sources to frontend format
           const sources: SourceCitation[] = metadata.sources.map((source, idx) => ({
             id: source.chunk_id || `source-${idx}`,
-            documentName: source.metadata?.filename || 'Unknown Document',
-            excerpt: source.content || '',
-            confidence: 0.9, // Default confidence
+            documentName: source.metadata?.filename || source.metadata?.title || 'Unknown Source',
+            excerpt: source.content || source.text || '',
+            confidence: source.score || 0.9,
+            url: source.metadata?.url,
+            source: source.metadata?.source,
+            pageNumber: source.metadata?.page
           }));
           assistantSources = sources;
+          const isWebSearch = sources.some(s => s.source?.toLowerCase().includes('web'));
 
           // Update message with sources
           setConversations((prev) =>
             prev.map((conv) =>
-              conv.id === activeConversationId
+              conv.id === currentId
                 ? {
                   ...conv,
                   messages: conv.messages.map((msg) =>
                     msg.id === assistantMessageId
-                      ? { ...msg, sources }
+                      ? { ...msg, sources, isWebSearch }
                       : msg
                   ),
                 }
@@ -153,13 +178,19 @@ export function useChat() {
           );
         },
         // onContent
-        (text) => {
+        (text, type) => {
+          if (type === 'status') {
+            // Option: Show as a toast or a small loading indicator inside the chat
+            // For now, let's just log it and potentially add logic to the UI later
+            console.log('Progress status:', text);
+            return;
+          }
           if (!assistantContent) {
             // Start the deliberate 2-second check timer when the first token arrives
             setTimeout(() => {
               setConversations((prev) =>
                 prev.map((conv) => {
-                  if (conv.id !== activeConversationId) return conv;
+                  if (conv.id !== currentId) return conv;
 
                   const isPlaceholder = ['Generating title...', 'New Chat', 'New conversation'].includes(conv.title);
                   if (!isPlaceholder) return conv;
@@ -182,7 +213,7 @@ export function useChat() {
           // Update message content in real-time
           setConversations((prev) =>
             prev.map((conv) => {
-              if (conv.id !== activeConversationId) return conv;
+              if (conv.id !== currentId) return conv;
 
               return {
                 ...conv,
@@ -205,7 +236,7 @@ export function useChat() {
           setTimeout(() => {
             setConversations((prev) =>
               prev.map((conv) => {
-                if (conv.id !== activeConversationId) return conv;
+                if (conv.id !== currentId) return conv;
 
                 const isPlaceholder = ['Generating title...', 'New Chat', 'New conversation'].includes(conv.title);
                 if (!isPlaceholder) return conv;
@@ -229,7 +260,7 @@ export function useChat() {
           // Update message with error
           setConversations((prev) =>
             prev.map((conv) =>
-              conv.id === activeConversationId
+              conv.id === currentId
                 ? {
                   ...conv,
                   messages: conv.messages.map((msg) =>
@@ -257,16 +288,8 @@ export function useChat() {
   }, [activeConversationId, conversations]);
 
   const createNewConversation = useCallback(() => {
-    const newConv: ChatConversation = {
-      id: Date.now().toString(),
-      title: 'New conversation',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isPinned: false,
-    };
-    setConversations((prev) => [newConv, ...prev]);
-    setActiveConversationId(newConv.id);
+    // Just clear the active ID to show empty state (Draft mode)
+    setActiveConversationId(null);
   }, []);
 
   const deleteConversation = useCallback((id: string) => {
@@ -276,17 +299,9 @@ export function useChat() {
       if (id === activeConversationId && filtered.length > 0) {
         setActiveConversationId(filtered[0].id);
       } else if (filtered.length === 0) {
-        // Create a new conversation if all are deleted
-        const newConv: ChatConversation = {
-          id: Date.now().toString(),
-          title: 'New conversation',
-          messages: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isPinned: false,
-        };
-        setActiveConversationId(newConv.id);
-        return [newConv];
+        // If all deleted, just reset to empty state (null)
+        setActiveConversationId(null);
+        return [];
       }
       return filtered;
     });
@@ -400,12 +415,26 @@ export function useChat() {
     return b.updatedAt.getTime() - a.updatedAt.getTime();
   });
 
+  const uploadDocuments = useCallback(async (files: File[]) => {
+    setIsLoading(true);
+    try {
+      const result = await api.uploadDocuments(files);
+      return result;
+    } catch (error) {
+      console.error('Failed to upload documents:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     messages,
     conversations: sortedConversations,
     activeConversationId,
     isLoading,
     sendMessage,
+    uploadDocuments,
     createNewConversation,
     setActiveConversationId,
     searchMessages,
@@ -416,4 +445,4 @@ export function useChat() {
     renameConversation,
     togglePinConversation,
   };
-}
+};

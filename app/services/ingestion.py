@@ -44,8 +44,36 @@ class IngestionService:
                             content += extracted + "\n"
                 except Exception as e:
                     print(f"Advanced PDF parsing error: {e}")
+            elif ext in [".txt", ".md", ".markdown"]:
+                # Text/Markdown with encoding fallback
+                encodings = ['utf-8', 'latin-1', 'cp1252']
+                for enc in encodings:
+                    try:
+                        with open(file_path, "r", encoding=enc) as f:
+                            content = f.read()
+                        break
+                    except UnicodeDecodeError:
+                        continue
+            elif ext == ".docx":
+                try:
+                    import docx
+                    doc = docx.Document(file_path)
+                    for para in doc.paragraphs:
+                        if para.text.strip():
+                            content += para.text + "\n"
+                    
+                    # Extract Tables
+                    for table in doc.tables:
+                        table_str = "\n[Table Start]\n"
+                        for row in table.rows:
+                            clean_row = [cell.text.strip() for cell in row.cells]
+                            table_str += " | ".join(clean_row) + "\n"
+                        table_str += "[Table End]\n"
+                        content += table_str
+                except Exception as e:
+                    print(f"Docx parsing error: {e}")
             else:
-                # Text/Markdown
+                # Generic fallback
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
 
@@ -56,7 +84,9 @@ class IngestionService:
 
             # 2. Chunk
             print(f"Chunking {filename}...")
-            metadata = {'source': filename, 'upload_time': time.time(), 'file_hash': file_hash}
+            # Use 'filename' key to match generator expectations, 'source' kept for legacy if needed or removed.
+            # Generator now checks both, but 'filename' is the standard.
+            metadata = {'filename': filename, 'upload_time': time.time(), 'file_hash': file_hash}
             chunks = chunker.chunk_text(content, metadata)
             print(f"Generated {len(chunks)} chunks.")
 
@@ -88,6 +118,7 @@ class IngestionService:
             if doc:
                 doc.status = "completed"
                 doc.chunk_count = len(chunks)
+                doc.content = content # Save full content for Parent Document Retrieval
                 db.commit()
             
             elapsed_time = time.time() - start_time

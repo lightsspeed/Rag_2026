@@ -14,3 +14,8 @@ pypdf
 httpx
 pytest
 slowapi
+python-docx
+numpy
+python-jose[cryptography]
+passlib[bcrypt]
+psutil

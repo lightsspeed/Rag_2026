@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 const API_V1_PREFIX = '/api/v1';
 
 // Type definitions for API requests/responses
@@ -46,12 +46,14 @@ export const api = {
         query: string,
         sessionId: string,
         onMetadata: (metadata: StreamMetadata) => void,
-        onContent: (text: string) => void,
+        onContent: (text: string, type: 'token' | 'status') => void,
         onComplete: () => void,
         onError: (error: Error) => void
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            const wsUrl = `${API_BASE_URL.replace('http', 'ws')}${API_V1_PREFIX}/ws/chat`;
+            const baseUrl = new URL(API_BASE_URL);
+            const protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${baseUrl.host}${API_V1_PREFIX}/ws/chat`;
             const socket = new WebSocket(wsUrl);
 
             socket.onopen = () => {
@@ -67,7 +69,9 @@ export const api = {
                     if (data.type === 'sources') {
                         onMetadata(data as StreamMetadata);
                     } else if (data.type === 'token') {
-                        onContent(data.content);
+                        onContent(data.content, 'token');
+                    } else if (data.type === 'status') {
+                        onContent(data.content, 'status');
                     } else if (data.type === 'complete') {
                         onComplete();
                         socket.close();
@@ -93,9 +97,9 @@ export const api = {
     },
 
     /**
-     * Upload PDF files
+     * Upload documents (PDF, TXT, MD)
      */
-    async uploadPDFs(files: File[]): Promise<any> {
+    async uploadDocuments(files: File[]): Promise<any> {
         const formData = new FormData();
         files.forEach((file) => {
             formData.append('files', file);

@@ -10,6 +10,7 @@ interface ChatAreaProps {
   messages: ChatMessageType[];
   isLoading: boolean;
   onSendMessage: (message: string, images?: string[]) => void;
+  onUpload?: (files: File[]) => Promise<any>;
   externalInput?: string;
   onClearExternalInput?: () => void;
   onFeedback?: (messageId: string, feedback: 'up' | 'down' | null) => void;
@@ -20,6 +21,7 @@ export function ChatArea({
   messages,
   isLoading,
   onSendMessage,
+  onUpload,
   externalInput,
   onClearExternalInput,
   onFeedback,
@@ -116,6 +118,7 @@ export function ChatArea({
         )}
         <ChatInput
           onSend={handleSend}
+          onUpload={onUpload}
           isLoading={isLoading}
           disabled={false}
           value={inputValue}

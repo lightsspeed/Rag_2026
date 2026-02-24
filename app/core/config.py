@@ -1,6 +1,6 @@
+from typing import List, Dict, Optional
 import os
 from pydantic_settings import BaseSettings
-from typing import List
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "FastRAG"
@@ -34,6 +34,19 @@ class Settings(BaseSettings):
     # LLM
     GROQ_API_KEY: str
     GROQ_MODEL: str = "llama-3.1-8b-instant"
+
+    # WEB SEARCH
+    BRAVE_API_KEY: Optional[str] = None
+
+    # Admin Seed
+    ADMIN_EMAIL: str = "admin@getit.com"
+    ADMIN_PASSWORD: str = "Admin@123"
+
+    # JWT
+    JWT_SECRET_KEY: str = "change-me-in-production-with-a-long-random-secret"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     class Config:
         env_file = ".env"

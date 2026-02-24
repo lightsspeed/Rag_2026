@@ -67,9 +67,57 @@ class RetrieverService:
         # Take Top K
         final_chunks = all_candidates[:top_k]
 
+        # Check for low relevance (threshold check)
+        # Cross-encoder scores for ms-marco-MiniLM-L-6-v2 are typically:
+        # > 0: relevant
+        # < 0: irrelevant
+        # Threshold of 0.0 ensures only genuinely relevant KB docs are returned;
+        # anything below means the KB has no useful answer → fall back to web search.
+        best_score = final_chunks[0]['score'] if final_chunks else -100
+        print(f"Top reranker score: {best_score}")
+
+        if best_score < 0.0:
+            print("Local content relevance too low. Falling back to web search check.")
+            return []
+
         # 5. Cache Results
         redis_cache.set_query_cache(query, {'chunks': final_chunks})
         
-        return final_chunks
+        # 6. Parent Document Retrieval (Fetch Full Content)
+        # Extract unique file hashes from the top chunks
+        unique_file_hashes = list(set([chunk['metadata']['file_hash'] for chunk in final_chunks if 'file_hash' in chunk['metadata']]))
+        
+        if not unique_file_hashes:
+            return final_chunks # Fallback if no hash found
+
+        from app.db.postgres import SessionLocal
+        from app.db import models
+        db = SessionLocal()
+        try:
+            full_docs = db.query(models.Document).filter(models.Document.file_hash.in_(unique_file_hashes)).all()
+            doc_map = {doc.file_hash: doc.content for doc in full_docs if doc.content}
+            
+            # Replace chunk text with full document text
+            # We want to return unique documents, not multiple chunks of the same doc
+            unique_results = []
+            seen_hashes = set()
+            
+            for chunk in final_chunks:
+                f_hash = chunk['metadata'].get('file_hash')
+                if f_hash and f_hash in doc_map:
+                    if f_hash not in seen_hashes:
+                        # Create a new result object with full content
+                        full_doc_result = chunk.copy()
+                        full_doc_result['text'] = doc_map[f_hash]
+                        full_doc_result['metadata']['is_full_doc'] = True
+                        unique_results.append(full_doc_result)
+                        seen_hashes.add(f_hash)
+                else:
+                    # Fallback keep chunk if full doc not found
+                    unique_results.append(chunk)
+            
+            return unique_results
+        finally:
+            db.close()
 
 retriever = RetrieverService()

@@ -15,7 +15,7 @@ except OSError:
 nlp.max_length = 2000000
 
 CHUNK_CONFIG = {
-    'max_chunk_size': 512,  # tokens
+    'max_chunk_size': 300,  # Reduced for better precision with Parent Document Retrieval
     'similarity_threshold': 0.5, # Break if distance > 0.5 (similarity < 0.5)
     'min_chunk_size': 50,
 }

@@ -33,16 +33,25 @@ export function EmptyState({ onSampleQuestion }: EmptyStateProps) {
       {/* Hero Section */}
       <div className="text-center mb-12 max-w-2xl">
         <div className="relative inline-flex mb-8">
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-2xl shadow-primary/30 animate-glow">
-            <Sparkles className="w-12 h-12 text-primary-foreground" />
+          <div className="w-24 h-24 rounded-3xl bg-card border border-border flex items-center justify-center shadow-2xl shadow-primary/30 p-4">
+            <img
+              src="/GETIT logo black.png"
+              alt="GetIT Logo"
+              className="w-full h-full object-contain dark:hidden"
+            />
+            <img
+              src="/GETIT logo white.png"
+              alt="GetIT Logo"
+              className="w-full h-full object-contain hidden dark:block"
+            />
           </div>
           <div className="absolute -right-2 -bottom-2 w-8 h-8 rounded-xl bg-card border border-border flex items-center justify-center shadow-lg">
             <Globe className="w-4 h-4 text-primary" />
           </div>
         </div>
-        
+
         <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent whitespace-nowrap leading-normal pb-2">
-          Welcome to IntelliQuery
+          Welcome to GetIT GenAI
         </h1>
         <p className="text-lg text-muted-foreground leading-relaxed max-w-lg mx-auto mb-3">
           Your AI-powered IT support assistant. Get instant help with technical issues, troubleshooting, and more.
@@ -83,23 +92,7 @@ export function EmptyState({ onSampleQuestion }: EmptyStateProps) {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-8 mt-16 text-center">
-        <div className="px-6">
-          <p className="text-3xl font-bold text-foreground">50K+</p>
-          <p className="text-xs text-muted-foreground mt-1">Issues Resolved</p>
-        </div>
-        <div className="w-px h-12 bg-border" />
-        <div className="px-6">
-          <p className="text-3xl font-bold text-foreground">24/7</p>
-          <p className="text-xs text-muted-foreground mt-1">AI Availability</p>
-        </div>
-        <div className="w-px h-12 bg-border" />
-        <div className="px-6">
-          <p className="text-3xl font-bold text-foreground">&lt;2min</p>
-          <p className="text-xs text-muted-foreground mt-1">Avg Response</p>
-        </div>
-      </div>
+
     </div>
   );
 }

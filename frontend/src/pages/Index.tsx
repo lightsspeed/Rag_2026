@@ -14,6 +14,7 @@ const Index = () => {
     activeConversationId,
     isLoading,
     sendMessage,
+    uploadDocuments,
     createNewConversation,
     setActiveConversationId,
     searchMessages,
@@ -23,7 +24,7 @@ const Index = () => {
     renameConversation,
     togglePinConversation,
   } = useChat();
-  
+
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pendingInput, setPendingInput] = useState('');
@@ -41,8 +42,8 @@ const Index = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <Header 
-        theme={theme} 
+      <Header
+        theme={theme}
         onToggleTheme={toggleTheme}
         onSelectIssue={handleSelectIssue}
       />

@@ -18,5 +18,6 @@ def get_db():
         db.close()
 
 def init_db():
-    # In a real app, use Alembic. For this demo, create_all.
-    Base.metadata.create_all(bind=engine)
+    # Use per-table creation with checkfirst=True for reliable IF NOT EXISTS behaviour
+    for table in Base.metadata.sorted_tables:
+        table.create(bind=engine, checkfirst=True)

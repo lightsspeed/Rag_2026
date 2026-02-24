@@ -1,0 +1,25 @@
+<svg
+  width="32"
+  height="32"
+  viewBox="0 0 40 40"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  {/* Enlarged Royal Blue Hexagon */}
+  <path
+    d="M20 2L38 11V29L20 38L2 29V11L20 2Z"
+    fill="#2663eb"
+  />
+  
+  {/* Node Structure */}
+  <path
+    d="M20 10V20M20 20L29 25M20 20L11 25"
+    stroke="white"
+    strokeWidth="3.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+  
+  {/* Core Node */}
+  <circle cx="20" cy="20" r="5" fill="white" />
+</svg>

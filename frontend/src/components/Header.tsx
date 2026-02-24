@@ -13,10 +13,12 @@ export function Header({ theme, onToggleTheme, onSelectIssue }: HeaderProps) {
     <header className="h-14 border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-50 flex items-center px-4 md:px-6 gap-4">
       {/* Logo */}
       <div className="flex items-center gap-3 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
-          <Sparkles className="w-4 h-4 text-primary-foreground" />
-        </div>
-        <span className="font-semibold text-foreground hidden sm:block">IntelliQuery</span>
+        <img
+          src="/RelianceLogo.png"
+          alt="Reliance Logo"
+          className="h-8 w-auto"
+        />
+        <span className="font-semibold text-foreground hidden sm:block">GetIT GenAI</span>
       </div>
 
       {/* Navbar - centered */}

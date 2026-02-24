@@ -4,6 +4,8 @@ export interface SourceCitation {
   excerpt: string;
   confidence: number;
   pageNumber?: number;
+  url?: string;
+  source?: string;
 }
 
 export interface ChatMessage {
@@ -14,6 +16,7 @@ export interface ChatMessage {
   sources?: SourceCitation[];
   images?: string[];
   feedback?: 'up' | 'down';
+  isWebSearch?: boolean;
 }
 
 export interface ChatConversation {
