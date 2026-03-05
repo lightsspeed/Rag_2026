@@ -7,46 +7,55 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # DATABASE
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "ragdb"
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "postgres")
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "ragdb")
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         # Fallback to SQLite if no POSTGRES params or explicit sqlite request
-        # For this fallback scenario, we prioritize SQLite
         if self.POSTGRES_HOST == "localhost" and self.POSTGRES_PASSWORD == "postgres":
-             # Default values usually mean env not set for Prod, so use SQLite for local ease
              return "sqlite:///./ragdb.db"
         
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     # REDIS
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
 
     # CHROMA
-    CHROMA_PERSISTENCE_DIR: str = "./chroma_db"
-    CHROMA_COLLECTION_NAME: str = "documents"
+    CHROMA_PERSISTENCE_DIR: str = os.getenv("CHROMA_PERSISTENCE_DIR", "./chroma_db")
+    CHROMA_COLLECTION_NAME: str = os.getenv("CHROMA_COLLECTION_NAME", "documents")
 
     # LLM
-    GROQ_API_KEY: str
-    GROQ_MODEL: str = "llama-3.1-8b-instant"
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
     # WEB SEARCH
-    BRAVE_API_KEY: Optional[str] = None
+    BRAVE_API_KEY: Optional[str] = os.getenv("BRAVE_API_KEY")
 
     # Admin Seed
-    ADMIN_EMAIL: str = "admin@getit.com"
-    ADMIN_PASSWORD: str = "Admin@123"
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@getit.com")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "Admin@123")
 
     # JWT
-    JWT_SECRET_KEY: str = "change-me-in-production-with-a-long-random-secret"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "change-me-in-production-with-a-long-random-secret")
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
+    # Multi-version Merge Cleanup
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "uploads")
+    MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", str(100 * 1024 * 1024)))
+    ALLOWED_EXTENSIONS: List[str] = [".pdf", ".docx", ".txt", ".md"]
+    
+    # Superadmin seeding
+    FIRST_SUPERADMIN_EMAIL: Optional[str] = os.getenv("ADMIN_EMAIL", "admin@getit.com")
+    FIRST_SUPERADMIN_PASSWORD: Optional[str] = os.getenv("ADMIN_PASSWORD", "Admin@123")
+    ALLOWED_ORIGINS: Optional[str] = os.getenv("ALLOWED_ORIGINS")
 
     class Config:
         env_file = ".env"
