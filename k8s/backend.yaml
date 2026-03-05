@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: fastrag
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube
+      containers:
+      - name: backend
+        image: lightsspeed/rag-chatbot-backend:v1.0.1
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "ragdb"
+        - name: POSTGRES_HOST
+          value: "postgres"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: ENVIRONMENT
+          value: "production"
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: JWT_SECRET_KEY
+        - name: GROQ_API_KEY_1
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: GROQ_API_KEY_1
+        - name: GROQ_API_KEY_2
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: GROQ_API_KEY_2
+        - name: GROQ_API_KEY_3
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: GROQ_API_KEY_3
+        - name: GROQ_API_KEY_4
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: GROQ_API_KEY_4
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: GOOGLE_API_KEY
+        - name: BRAVE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: rag-secrets
+              key: BRAVE_API_KEY
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: fastrag
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: 8000

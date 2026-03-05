@@ -39,3 +39,6 @@ yarn-error.log*
 
 # Docker
 .docker/
+
+# K8s Secrets
+k8s/secrets.yaml
