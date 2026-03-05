@@ -4,7 +4,7 @@ metadata:
   name: backend
   namespace: fastrag
 spec:
-  replicas: 5
+  replicas: 2
   selector:
     matchLabels:
       app: backend
@@ -88,4 +88,5 @@ spec:
   - name: metrics
     port: 8000
     targetPort: 8000
+
 
