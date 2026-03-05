@@ -4,7 +4,7 @@ metadata:
   name: frontend
   namespace: fastrag
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: frontend
@@ -31,3 +31,4 @@ spec:
   ports:
   - port: 80
     targetPort: 80
+
