@@ -4,7 +4,7 @@ import uuid
 import hashlib
 from dotenv import load_dotenv
 
-# Add parent directory to path so we can import app modules
+# Add parent directory to path so we can import backend modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
@@ -16,9 +16,9 @@ load_dotenv(env_path)
 # Change working directory to root so SQLite finds the DB at ./ragdb.db
 os.chdir(parent_dir)
 
-from app.db.postgres import SessionLocal
-from app.db import models
-from app.services.ingestion import ingestion_service
+from backend.db.postgres import SessionLocal
+from backend.db import models
+from backend.services.ingestion import ingestion_service
 
 def calculate_file_hash(file_path):
     sha256_hash = hashlib.sha256()

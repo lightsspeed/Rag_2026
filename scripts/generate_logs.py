@@ -6,8 +6,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.db.postgres import SessionLocal
-from app.db import models
+from backend.db.postgres import SessionLocal
+from backend.db import models
 from datetime import datetime
 
 def generate_full_report(output_file='ingestion_report.log'):

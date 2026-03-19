@@ -16,8 +16,7 @@ env/
 .env.local
 
 # Databases and Local Storage
-chroma_db/
-ragdb.db
+data/
 uploads/
 temp_uploads/
 
@@ -39,6 +38,12 @@ yarn-error.log*
 
 # Docker
 .docker/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform_fixed/
 
 # K8s Secrets
 k8s/secrets.yaml

@@ -7,11 +7,11 @@ import time
 sys.path.append(os.getcwd())
 
 from sqlalchemy.orm import Session
-from app.db.postgres import SessionLocal
-from app.db import models
-from app.services.chunker import chunker
-from app.services.embedder import embedder
-from app.db.chroma import get_collection
+from backend.db.postgres import SessionLocal
+from backend.db import models
+from backend.services.chunker import chunker
+from backend.services.embedder import embedder
+from backend.db.chroma import get_collection
 
 def log_progress(message):
     print(message, flush=True)

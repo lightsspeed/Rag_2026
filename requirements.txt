@@ -19,3 +19,13 @@ numpy
 python-jose[cryptography]
 passlib[bcrypt]
 psutil
+email-validator
+opencv-python-headless
+pytesseract
+pdf2image
+pymupdf
+Pillow
+google-generativeai
+PyJWT
+bcrypt==4.0.1
+prometheus-fastapi-instrumentator

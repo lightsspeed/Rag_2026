@@ -8,9 +8,9 @@ import hashlib
 # Add app to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app.db.postgres import SessionLocal
-from app.db import models
-from app.services.ingestion import ingestion_service
+from backend.db.postgres import SessionLocal
+from backend.db import models
+from backend.services.ingestion import ingestion_service
 
 def reprocess_stuck_documents():
     db = SessionLocal()

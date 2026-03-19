@@ -1,101 +1,99 @@
-# FastRAG Chatbot Setup Guide
+# KnowledgeFlow AI Setup Guide
 
-Follow these steps to set up and run the FastRAG Chatbot project on your local machine.
+Follow these steps to set up and run the KnowledgeFlow AI project on your local machine or in production.
 
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
-- **Python 3.9+**
-- **Node.js 18+** & **npm**
+- **Docker** & **Docker Compose** (Recommended for all environments)
+- **Python 3.11+** (For local development)
+- **Node.js 20+** & **npm** (For local development)
 - **Git**
 
 ---
 
-## 1. Backend Setup (FastAPI)
+## 🚀 Production Deployment (Docker - Recommended)
 
-1. **Navigate to the root directory:**
+This is the easiest and most reliable way to run KnowledgeFlow AI. The official images are available on Docker Hub:
+- **Backend**: `lightsspeed/rag-chatbot-backend:v1.0.1`
+- **Frontend**: `lightsspeed/rag-chatbot-frontend:v1.0.0`
+
+1. **Clone the repository:**
    ```bash
+   git clone https://github.com/lightsspeed/Rag_2026.git
    cd rag-chatbot
    ```
 
-2. **Create a virtual environment:**
+2. **Configure Environment Variables:**
+   - Create a `.env` file in the root directory.
+   - Add your [Groq API Key](https://console.groq.com/):
+     ```env
+     GROQ_API_KEY=gsk_your_key_here
+     ```
+
+3. **Start the Stack:**
    ```bash
-   # Windows
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+4. **Access the App:**
+   - **Frontend:** [http://localhost](http://localhost)
+   - **Admin Portal:** [http://localhost/admin](http://localhost/admin)
+   - **API Health:** [http://localhost:8000/health](http://localhost:8000/health)
+
+---
+
+## 🛠️ Local Development Setup
+
+### 1. Backend Setup (FastAPI)
+
+1. **Navigate to the root directory and create a venv:**
+   ```bash
    python -m venv venv
-   # macOS/Linux
-   python3 -m venv venv
+   source venv/bin/activate  # venv\Scripts\activate on Windows
    ```
 
-3. **Activate the virtual environment:**
-   ```bash
-   # Windows
-   .\venv\Scripts\activate
-   # macOS/Linux
-   source venv/bin/activate
-   ```
-
-4. **Install dependencies:**
+2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-5. **Configure Environment Variables:**
-   - Copy `.env.example` to a new file named `.env`.
-   - Update the following values in `.env`:
-     - `GROQ_API_KEY`: Get your key from [Groq Console](https://console.groq.com/).
-     - `POSTGRES_*`: Required only if using Postgres (the app defaults to local SQLite/ChromaDB if not configured).
-     - `REDIS_*`: Required only if using Redis for caching.
-
-6. **Run the Backend Server:**
+3. **Run the Backend:**
    ```bash
    python -m uvicorn app.main:app --reload --port 8000
    ```
-   The backend will be available at `http://localhost:8000`.
 
----
+### 2. Frontend Setup (React + Vite)
 
-## 2. Frontend Setup (React + Vite)
-
-1. **Open a new terminal window.**
-
-2. **Navigate to the frontend directory:**
+1. **Navigate to the frontend directory:**
    ```bash
-   cd rag-chatbot/frontend
-   ```
-
-3. **Install npm dependencies:**
-   ```bash
+   cd frontend
    npm install
-   ```
-
-4. **Run the Frontend Development Server:**
-   ```bash
    npm run dev
    ```
-   The frontend will be available at `http://localhost:5173`.
+   The development frontend will be at `http://localhost:5173`.
 
 ---
 
-## 3. Usage Instructions
+## Usage Instructions
 
-1. **Access the Chatbot:** Open your browser and go to `http://localhost:5173`.
-2. **Upload Documents:** Use the upload feature to add your PDFs to the knowledge base.
-3. **Chat:** Ask questions about your documents! The AI will use RAG (Retrieval-Augmented Generation) to answer based on the uploaded content.
-4. **Smart Titles:** New conversations will automatically receive descriptive titles after your first message.
+1. **Chat:** Ask questions about your knowledge base!
+2. **Upload Documents:** Use the upload feature to add PDFs or Markdown files.
+3. **Monitoring:** Visit `/metrics` on the backend to see Prometheus statistics.
 
 ---
 
 ## Project Structure
 
-- `/app`: Backend source code (FastAPI, LLM logic).
-- `/frontend`: Frontend source code (React, Tailwind CSS).
-- `/chroma_db`: Local vector database storage.
-- `/uploads`: Temporary storage for uploaded documents.
+- `/app`: Backend source code (FastAPI, Multi-agent Reasoning).
+- `/frontend`: Frontend source code (React, Tailwind, Shadcn).
+- `/chroma_db`: Persistent vector database storage.
+- `/uploads`: Persistent storage for uploaded documents.
 
 ---
 
 ## Troubleshooting
 
-- **CORS Errors:** Ensure the backend is running on port 8000 and the frontend is on port 5173.
-- **Missing API Key:** If messages fail, verify your `GROQ_API_KEY` is correctly set in the `.env` file.
-- **Database Issues:** If documents aren't being searched, try clearing the `chroma_db` folder (it will be recreated on next upload).
+- **CORS Errors:** In production, the Nginx container proxies both frontend and backend on port 80, eliminating CORS issues.
+- **Port 80 Conflict:** If port 80 is occupied, change the mapping in `docker-compose.prod.yml`.
+- **API Key:** Ensure `GROQ_API_KEY` is valid in your `.env`.

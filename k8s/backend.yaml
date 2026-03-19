@@ -17,8 +17,8 @@ spec:
         kubernetes.io/hostname: minikube
       containers:
       - name: backend
-        image: rag-chatbot-backend:v1.3.4
-        imagePullPolicy: Never
+        image: lightsspeed/rag-chatbot-backend:v1.0.1
+        imagePullPolicy: IfNotPresent
         env:
         - name: POSTGRES_USER
           value: "postgres"
