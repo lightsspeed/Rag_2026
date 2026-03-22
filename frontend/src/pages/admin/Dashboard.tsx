@@ -25,12 +25,10 @@ interface StatsData {
 }
 
 interface RagData {
-  total_queries: number;
-  conversations: number;
   total_feedback: number;
   feedback_positive_pct: number;
-  total_documents: number;
-  total_chunks: number;
+  conversations: number;
+  total_queries: number;
   queries_today?: number;
   follow_up_rate?: number;
 }
@@ -87,7 +85,6 @@ export default function AdminDashboard() {
     { label: "Total Users",      value: String(stats?.total_users ?? 0),      icon: Users,         color: "text-blue-500" },
     { label: "Conversations",    value: String(rag?.conversations ?? 0),       icon: MessageSquare, color: "text-violet-500" },
     { label: "Total Queries",    value: String(rag?.total_queries ?? 0),       icon: Activity,      color: "text-emerald-500" },
-    { label: "Documents",        value: String(rag?.total_documents ?? 0),     icon: Database,      color: "text-amber-500" },
     { label: "Satisfaction",     value: `${rag?.feedback_positive_pct ?? 0}%`, icon: TrendingUp,    color: "text-pink-500" },
   ];
 
@@ -107,7 +104,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => (
           <Card key={stat.label} className="border-border">
             <CardContent className="p-4">
@@ -181,26 +178,6 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Knowledge Base Summary */}
-          {rag && (
-            <Card className="border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Knowledge Base</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="p-2 rounded-lg bg-secondary/30">
-                    <div className="text-sm font-bold">{rag.total_documents}</div>
-                    <div className="text-[10px] text-muted-foreground">Documents</div>
-                  </div>
-                  <div className="p-2 rounded-lg bg-secondary/30">
-                    <div className="text-sm font-bold">{rag.total_chunks.toLocaleString()}</div>
-                    <div className="text-[10px] text-muted-foreground">Chunks</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Feedback Summary */}
           {rag && rag.total_feedback > 0 && (

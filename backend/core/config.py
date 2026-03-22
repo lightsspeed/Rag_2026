@@ -67,9 +67,6 @@ class Settings(BaseSettings):
 
     # Multi-version Merge Cleanup
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "uploads")
-    MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", str(100 * 1024 * 1024)))
-    ALLOWED_EXTENSIONS: List[str] = [".pdf", ".docx", ".txt", ".md"]
     
     # Superadmin seeding
     FIRST_SUPERADMIN_EMAIL: Optional[str] = os.getenv("ADMIN_EMAIL", "admin@getit.com")

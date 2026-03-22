@@ -4,7 +4,7 @@ metadata:
   name: backend
   namespace: fastrag
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -13,12 +13,10 @@ spec:
       labels:
         app: backend
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: minikube
       containers:
       - name: backend
-        image: lightsspeed/rag-chatbot-backend:v1.0.1
-        imagePullPolicy: IfNotPresent
+        image: lightsspeed/rag-chatbot-backend:latest
+        imagePullPolicy: Always
         env:
         - name: POSTGRES_USER
           value: "postgres"
@@ -36,11 +34,17 @@ spec:
           value: "6379"
         - name: ENVIRONMENT
           value: "production"
-        - name: JWT_SECRET_KEY
+        - name: GROQ_MODEL
+          value: "llama-3.1-8b-instant"
+        - name: GROQ_PLANNING_MODEL
+          value: "llama-3.3-70b-versatile"
+        - name: GROQ_FAST_MODEL
+          value: "llama-3.1-8b-instant"
+        - name: BRAVE_API_KEY
           valueFrom:
             secretKeyRef:
               name: rag-secrets
-              key: JWT_SECRET_KEY
+              key: BRAVE_API_KEY
         - name: GROQ_API_KEY_1
           valueFrom:
             secretKeyRef:
@@ -66,13 +70,14 @@ spec:
             secretKeyRef:
               name: rag-secrets
               key: GOOGLE_API_KEY
-        - name: BRAVE_API_KEY
+        - name: JWT_SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: rag-secrets
-              key: BRAVE_API_KEY
+              key: JWT_SECRET_KEY
         ports:
         - containerPort: 8000
+
 ---
 apiVersion: v1
 kind: Service

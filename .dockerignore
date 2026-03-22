@@ -16,7 +16,7 @@ uploads/
 *.md
 tests/
 terraform/
-nginx/
+# nginx/ (removed since it holds essential configs)
 docker-compose*.yml
 Dockerfile*
 .dockerignore

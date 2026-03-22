@@ -123,6 +123,13 @@ class ReasoningEngine:
             telemetry.stop_operation("web_search", trace_id, t_search)
             results = search_results if search_results else []
             
+            # Record retrieval metrics for monitoring (Avg Retrieval Score)
+            if results:
+                best_score = max([r.get("score", 0.1) for r in results])
+                telemetry.record_retrieval(len(results), best_score)
+            else:
+                telemetry.record_retrieval(0, 0.0)
+            
             # Skip to synthesis
             plan = None
         else:

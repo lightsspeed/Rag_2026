@@ -61,22 +61,7 @@ def _check_redis():
 
 
 def _check_chromadb():
-    try:
-        import chromadb
-        t0 = time.time()
-        client = chromadb.PersistentClient(path=settings.CHROMA_PERSISTENCE_DIR)
-        collections = client.list_collections()
-        col_count = len(collections)
-        total_vectors = 0
-        for col in collections:
-            try:
-                total_vectors += col.count()
-            except Exception:
-                pass
-        latency = round((time.time() - t0) * 1000, 1)
-        return {"status": "Healthy", "latency_ms": latency, "collections": col_count, "total_vectors": total_vectors}
-    except Exception as e:
-        return {"status": f"Error: {str(e)[:40]}", "latency_ms": 0, "collections": 0, "total_vectors": 0}
+    return {"status": "Decommissioned", "latency_ms": 0, "collections": 0, "total_vectors": 0}
 
 
 def _check_llm():
@@ -156,12 +141,8 @@ def get_rag_metrics(
     total_queries = db.query(func.count(models.QueryLog.id)).scalar() or 0
     total_conversations = db.query(func.count(models.Conversation.id)).scalar() or 0
     total_feedback = db.query(func.count(models.Feedback.id)).scalar() or 0
-    total_documents = (
-        db.query(func.count(models.Document.id))
-        .filter(models.Document.status == "completed")
-        .scalar() or 0
-    )
-    total_chunks = int(db.query(func.sum(models.Document.chunk_count)).scalar() or 0)
+    total_documents = 0
+    total_chunks = 0
     avg_feedback_up = 0.0
     if total_feedback > 0:
         up_count = db.query(func.count(models.Feedback.id)).filter(models.Feedback.rating == "up").scalar() or 0
@@ -195,13 +176,7 @@ def get_rag_metrics(
         .scalar() or 0
     )
 
-    # Document processing status breakdown
-    status_rows = (
-        db.query(models.Document.status, func.count(models.Document.id))
-        .group_by(models.Document.status)
-        .all()
-    )
-    processing_status = {row[0]: row[1] for row in status_rows}
+    processing_status = {}
 
     # Service health checks
     pg_info = _check_postgres(db)

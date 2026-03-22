@@ -334,74 +334,7 @@ export async function deleteConversation(conversationId: string): Promise<boolea
   return res.ok;
 }
 
-// --- Document / Knowledge Base API ---
 
-export interface KBDocument {
-  id: number;
-  filename: string;
-  upload_date: string;
-  status: string;
-  chunk_count?: number;
-}
-
-export async function getDocuments(): Promise<KBDocument[]> {
-  const res = await authFetch(`${API_BASE}/documents`);
-  if (!res.ok) return [];
-  return res.json();
-}
-
-export async function uploadDocument(
-  file: File,
-  onProgress?: (progress: number) => void
-): Promise<{ filename: string; status: string; document_id: number }> {
-  return new Promise((resolve, reject) => {
-    const token = getAccessToken();
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API_BASE}/documents/upload`);
-    
-    if (token) {
-      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-    }
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable && onProgress) {
-        const percentComplete = Math.round((event.loaded / event.total) * 100);
-        onProgress(percentComplete);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          resolve(JSON.parse(xhr.responseText));
-        } catch {
-          resolve({ filename: file.name, status: "processing", document_id: 0 });
-        }
-      } else {
-        try {
-          const err = JSON.parse(xhr.responseText);
-          reject(new Error(err.detail || "Upload failed"));
-        } catch {
-          reject(new Error("Upload failed"));
-        }
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Network Error"));
-
-    const formData = new FormData();
-    formData.append("file", file);
-    xhr.send(formData);
-  });
-}
-
-export async function deleteDocument(documentId: number): Promise<void> {
-  const res = await authFetch(`${API_BASE}/documents/${documentId}`, { method: "DELETE" });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: "Delete failed" }));
-    throw new Error(err.detail || "Delete failed");
-  }
-}
 
 // --- Feedback API ---
 

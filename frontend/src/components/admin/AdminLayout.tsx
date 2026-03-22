@@ -33,7 +33,7 @@ const navItems = [
   { label: "Roles & Permissions", icon: Shield, path: "/admin/roles" },
   { label: "Audit Logs", icon: ScrollText, path: "/admin/logs" },
   { label: "System Monitor", icon: Activity, path: "/admin/monitor" },
-  { label: "Knowledge Base", icon: Database, path: "/admin/access" },
+  { label: "System Status", icon: Activity, path: "/admin/access" },
   { label: "User Feedback", icon: ThumbsUp, path: "/admin/feedback" },
   { label: "Configuration", icon: Settings, path: "/admin/config" },
 ];

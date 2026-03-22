@@ -13,7 +13,6 @@ from backend.api.endpoints import router as api_router
 from backend.api.auth_routes import router as auth_router
 from backend.db.postgres import init_db, SessionLocal
 from backend.core.limiter import limiter
-from backend.services.ingestion import ingestion_service
 import logging
 import os
 from datetime import datetime
@@ -84,17 +83,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        # Skip restrictive CSP for document downloads (PDFs rendered in iframe)
-        if "/documents/download/" not in str(request.url.path):
-            csp_origins = " ".join(origins)
-            response.headers["Content-Security-Policy"] = f"frame-ancestors 'self' {csp_origins}"
+        csp_origins = " ".join(origins)
+        response.headers["Content-Security-Policy"] = f"frame-ancestors 'self' {csp_origins}"
         return response
 
 backend.add_middleware(SecurityHeadersMiddleware)
 
-# Mount Static Files for Uploads
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-backend.mount("/static/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 # Include Routers
 backend.include_router(api_router, prefix=settings.API_V1_STR)
@@ -106,17 +100,7 @@ def on_startup():
     init_db()
     _seed_superadmin()
     
-    # Auto-index documents in uploads folder
-    db = SessionLocal()
-    try:
-        logger.info(f"Scanning {settings.UPLOAD_DIR} for new documents...")
-        ingestion_service.process_all_in_dir(settings.UPLOAD_DIR, db)
-    except Exception as e:
-        logger.error(f"Failed to process uploads on startup: {e}")
-    finally:
-        db.close()
-
-    logger.info("Application starting up. Knowledge Base auto-indexing complete.")
+    logger.info("Application starting up. Core services initialized.")
 
 
 def _validate_security_config():

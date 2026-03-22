@@ -32,8 +32,8 @@ RUN find /opt/venv -name "*.pyc" -delete && \
 # Stage 2: Final runtime image
 FROM python:3.11-slim
 
-LABEL org.opencontainers.image.title="KnowledgeFlow AI Backend"
-LABEL org.opencontainers.image.version="1.3.0"
+LABEL org.opencontainers.image.title="Advanced AI Chat Backend"
+LABEL org.opencontainers.image.version="2.0.0"
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -60,7 +60,7 @@ COPY backend/ ./backend/
 COPY scripts/ ./scripts/
 
 # Setup storage and permissions
-RUN mkdir -p uploads data/chroma_db logs && \
+RUN mkdir -p logs && \
     chown -R knowledgeflow:knowledgeflow /app
 
 USER knowledgeflow
@@ -70,4 +70,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "backend.main:backend", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

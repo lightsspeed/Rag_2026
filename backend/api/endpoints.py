@@ -20,10 +20,8 @@ from backend.db import models
 from backend.db.postgres import get_db, SessionLocal
 from backend.api.auth_routes import get_current_user
 from backend.core.security import get_user_from_token_str
-from backend.services.retriever import retriever
 from backend.services.generator import generator
 from backend.services.cache import redis_cache
-from backend.services.ingestion import ingestion_service
 from backend.services.web_search import web_search_service
 from backend.services.reasoning_engine import reasoning_engine
 from backend.services.vision import vision_service
@@ -63,159 +61,7 @@ class VisionAnalysisResponse(BaseModel):
     model: str
     tokens_used: Optional[int] = None
 
-# --- Global Tracking ---
 
-# Global registry for active user WebSockets to allow background progress broadcasting
-user_websockets: dict[str, Set[WebSocket]] = {} # user_id -> set(WebSocket)
-
-async def broadcast_to_user(user_id: str, message: dict):
-    """Sends a message to all active WebSockets for a specific user."""
-    if user_id in user_websockets:
-        dead_sockets = set()
-        for ws in user_websockets[user_id]:
-            try:
-                await ws.send_json(message)
-            except Exception:
-                dead_sockets.add(ws)
-        
-        # Clean up dead sockets
-        for ws in dead_sockets:
-            user_websockets[user_id].remove(ws)
-
-# --- Document Endpoints ---
-
-@router.post("/documents/upload")
-@limiter.limit("10/minute")
-async def upload_document(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Upload a document to the knowledge base and trigger ingestion."""
-    # Validate file extension
-    ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"File type '{ext}' not supported. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}"
-        )
-
-    # Read file content and check size
-    content = await file.read()
-    if len(content) > settings.MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=413, 
-            detail=f"File too large. Maximum size: {settings.MAX_FILE_SIZE // (1024*1024)}MB"
-        )
-
-    # Save file to disk
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
-    with open(file_path, "wb") as buffer:
-        buffer.write(content)
-
-    # Hash for deduplication
-    file_hash = hashlib.sha256(content).hexdigest()
-    
-    existing_doc = db.query(models.Document).filter(models.Document.file_hash == file_hash).first()
-    if existing_doc:
-        return {
-            "filename": existing_doc.filename,
-            "status": existing_doc.status,
-            "document_id": existing_doc.id,
-        }
-
-    # Create record in DB
-    db_doc = models.Document(
-        filename=file.filename,
-        file_hash=file_hash,
-        status="processing"
-    )
-    db.add(db_doc)
-    db.commit()
-    db.refresh(db_doc)
-
-    # Progress callback helper
-    loop = asyncio.get_event_loop()
-    def progress_callback(data):
-        asyncio.run_coroutine_threadsafe(broadcast_to_user(user.id, data), loop)
-
-    # Run ingestion in background
-    def _run_ingestion():
-        from backend.db.postgres import SessionLocal
-        bg_db = SessionLocal()
-        try:
-            ingestion_service.process_document(file_path, file.filename, file_hash, bg_db, progress_callback=progress_callback)
-        except Exception as e:
-            logger.error(f"Background ingestion failed for {file.filename}: {e}", exc_info=True)
-            doc = bg_db.query(models.Document).filter(models.Document.file_hash == file_hash).first()
-            if doc:
-                doc.status = "failed"
-                bg_db.commit()
-            progress_callback({"type": "ingestion_progress", "filename": file.filename, "status": "failed", "details": str(e)})
-        finally:
-            bg_db.close()
-
-    background_tasks.add_task(_run_ingestion)
-
-    return {"filename": db_doc.filename, "status": "processing", "document_id": db_doc.id}
-
-@router.get("/documents")
-@limiter.limit("30/minute")
-def list_documents(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    docs = db.query(models.Document).order_by(models.Document.upload_date.desc()).all()
-    return [
-        {
-            "id": d.id,
-            "filename": d.filename,
-            "upload_date": d.upload_date.isoformat() if d.upload_date else "",
-            "status": d.status,
-            "chunk_count": d.chunk_count or 0,
-        }
-        for d in docs
-    ]
-
-@router.get("/documents/download/{filename}")
-@limiter.limit("30/minute")
-def download_document(
-    filename: str,
-    request: Request,
-    current_user: models.User = Depends(get_current_user),
-):
-    # Path traversal protection
-    safe_filename = os.path.basename(filename)
-    file_path = os.path.join(settings.UPLOAD_DIR, safe_filename)
-    
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(file_path, filename=safe_filename)
-
-@router.delete("/documents/{document_id}")
-@limiter.limit("10/minute")
-def delete_document(
-    document_id: int,
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    doc = db.query(models.Document).filter(models.Document.id == document_id).first()
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document not found")
-
-    # Remove from filesystem
-    file_path = os.path.join(settings.UPLOAD_DIR, doc.filename)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
-    db.delete(doc)
-    db.commit()
-    return {"status": "deleted"}
 
 # --- WebSocket Chat ---
 
@@ -237,10 +83,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         await websocket.accept()
         logger.info(f"WebSocket authenticated: user={ws_user.email}, session={session_id}")
 
-        if ws_user.id not in user_websockets:
-            user_websockets[ws_user.id] = set()
-        user_websockets[ws_user.id].add(websocket)
-
         telemetry.session_opened()
         active_tasks = {} # session_id -> asyncio.Task
 
@@ -259,21 +101,8 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                         await websocket.send_json({"type": "error", "message": "Failed to process image."})
                         return
 
-                # Normal RAG flow
-                local_sources = await retriever.retrieve(q, top_k=5)
-                formatted_sources = []
-                for i, chunk in enumerate(local_sources):
-                    score = chunk.get('score', 0.0)
-                    confidence = round(sigmoid(score), 2)
-                    metadata = chunk.get('metadata', {})
-                    formatted_sources.append({
-                        "id": chunk.get('id', f'chunk-{i}'),
-                        "documentName": metadata.get('filename', 'Source'),
-                        "excerpt": chunk.get('text', '')[:300],
-                        "confidence": confidence,
-                        "isWeb": metadata.get('is_web', False)
-                    })
-                await websocket.send_json({"type": "sources", "sources": formatted_sources})
+                # Normal flow (web search & reasoning)
+                await websocket.send_json({"type": "sources", "sources": []})
 
                 # Reasoning/Generation
                 async for update in reasoning_engine.process_query_stream(q, user_name=uname, user_id=uid):
@@ -325,8 +154,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             active_tasks[session_id] = task
 
     except WebSocketDisconnect:
-        if ws_user.id in user_websockets:
-            user_websockets[ws_user.id].discard(websocket)
+        pass
     finally:
         db.close()
         telemetry.session_closed()

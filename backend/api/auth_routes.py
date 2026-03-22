@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
 from backend.db.postgres import get_db
-from backend.db.models import User, AuditLog, Conversation, ConversationTurn, ConversationEntity, Document, Chunk, QueryLog, Feedback
+from backend.db.models import User, AuditLog, Conversation, ConversationTurn, ConversationEntity, QueryLog, Feedback
 from backend.services.auth import auth_service, RegisterRequest, LoginRequest, UserResponse, TokenPair
 from backend.core.limiter import limiter
 from pydantic import BaseModel
@@ -587,24 +587,13 @@ async def get_rag_metrics(
         ConversationEntity.entity_type,
     ).order_by(desc("mentions")).limit(10).all()
 
-    # --- Knowledge Base ---
-    total_documents = db.query(func.count(Document.id)).scalar() or 0
-    total_chunks = db.query(func.count(Chunk.id)).scalar() or 0
-
-    doc_status_rows = db.query(
-        Document.status, func.count(Document.id)
-    ).group_by(Document.status).all()
-    processing_status = {(row[0] or "unknown"): row[1] for row in doc_status_rows}
+    # --- Knowledge Base (Decommissioned) ---
+    total_documents = 0
+    total_chunks = 0
+    processing_status = {}
 
     # --- ChromaDB health ---
-    chroma_info = {"status": "Unknown", "collections": 0, "total_vectors": 0}
-    try:
-        from backend.db.chroma import get_collection
-        collection = get_collection()
-        count = collection.count()
-        chroma_info = {"status": "Healthy", "collections": 1, "total_vectors": count}
-    except Exception as e:
-        chroma_info = {"status": f"Error: {str(e)[:50]}", "collections": 0, "total_vectors": 0}
+    chroma_info = {"status": "Decommissioned", "collections": 0, "total_vectors": 0}
 
     # --- Service Health (with latency) ---
     services = {}

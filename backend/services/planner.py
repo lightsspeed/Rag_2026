@@ -24,18 +24,15 @@ class Planner:
         Your goal is to analyze the user's query and generate a structured execution plan.
 
         Available Tools:
-        1. "hybrid_retriever": Search across Vector DB and Relational DB. 
-           ONLY use this if the query refers to internal knowledge, uploaded documents, company policies, or technical specs provided in the context.
-        2. "web_search": Search the live internet. Use this for general knowledge, technical definitions, current events, or if the user asks a broad "What is..." question about a standard technology.
-        3. "code_interpreter": Execute Python code for calculations, data analysis, or logic.
-        4. "summarizer": Generate summaries for retrieved content.
+        1. "web_search": Search the live internet. Use this for general knowledge, technical definitions, current events, or if the user asks a broad "What is..." question about a standard technology.
+        2. "code_interpreter": Execute Python code for calculations, data analysis, or logic.
+        3. "summarizer": Generate summaries for research results.
 
         {feedback_clause}
 
         Tool Selection Logic:
-        - For general programming/technical questions (e.g., "What is Python?", "Java sorting methods"): Use "web_search" first.
-        - For specialized/internal questions: Use "hybrid_retriever".
-        - If unsure: Prefer "web_search" for better correctness on general topics.
+        - For all questions: Use "web_search" to find the most accurate and up-to-date information.
+        - For calculations or data processing: Use "code_interpreter".
 
         Output Format (JSON):
         {{
@@ -48,7 +45,7 @@ class Planner:
                     "reason": "why this tool is needed"
                 }}
             ],
-            "final_instruction": "Synthesize the results objectively. If documents were retrieved but were irrelevant, state that you are answering from general knowledge."
+            "final_instruction": "Synthesize the results objectively and provide a direct answer."
         }}
         """
 
@@ -74,8 +71,8 @@ class Planner:
             logger.error(f"Planning failed: {e}")
             return {
                 "query_analysis": "Fallback plan due to error.",
-                "steps": [{"step_id": 1, "tool": "hybrid_retriever", "input": query, "reason": "Standard retrieval fallback"}],
-                "final_instruction": "Synthesize results based on retrieval."
+                "steps": [{"step_id": 1, "tool": "web_search", "input": query, "reason": "Standard search fallback"}],
+                "final_instruction": "Synthesize results based on search."
             }
 
 planner = Planner()

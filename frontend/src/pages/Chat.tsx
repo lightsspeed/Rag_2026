@@ -31,7 +31,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  Upload,
   Copy,
   ClipboardCheck,
   ThumbsUp,
@@ -59,10 +58,6 @@ import {
   getConversationTurns,
   deleteConversation,
   generateChatTitle,
-  getDocuments,
-  uploadDocument,
-  deleteDocument,
-  fetchDocumentBlobUrl,
   submitFeedback,
   type ChatMessage
 } from "@/services/api";
@@ -95,7 +90,7 @@ const Chat = () => {
   const [sourcesSidebarOpen, setSourcesSidebarOpen] = useState(false);
   const [activeSources, setActiveSources] = useState<{ docs: string[]; web: string[]; isKBMode?: boolean }>({ docs: [], web: [] });
   const [searchQuery, setSearchQuery] = useState("");
-  const [kbDocuments, setKbDocuments] = useState<any[]>([]);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<{ name: string; url: string } | null>(null);
   const { theme, setTheme } = useTheme();
@@ -105,14 +100,10 @@ const Chat = () => {
   // WebSocket connection management
   const sessionIdRef = useRef<string>(Date.now().toString());
 
-  // Fetch Knowledge Base documents and Conversations
+  // Fetch Conversations on mount/user change
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const docs = await getDocuments();
-        setKbDocuments(docs);
-
-        // Fetch user conversations
         const convs = await getConversations();
         setConversations(convs.map(c => ({
           ...c,
@@ -125,6 +116,7 @@ const Chat = () => {
     };
     if (user) fetchData();
   }, [user]);
+
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState<Record<string, "up" | "down">>({});
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -134,11 +126,9 @@ const Chat = () => {
   const [editingConvId, setEditingConvId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [statusText, setStatusText] = useState<string | null>(null);
-  const [ingestionProgress, setIngestionProgress] = useState<Record<string, { status: string; progress: number; details: string; document_id?: number }>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMsgRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
-  const kbFileInputRef = useRef<HTMLInputElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const streamingContentRef = useRef<string>("");
   const navigate = useNavigate();
@@ -167,32 +157,6 @@ const Chat = () => {
             setStatusText(msg.content || null);
             break;
 
-          case "ingestion_progress":
-            const data = msg as any;
-            setIngestionProgress(prev => ({
-              ...prev,
-              [data.filename]: {
-                status: data.status,
-                progress: data.progress,
-                details: data.details,
-                document_id: data.document_id
-              }
-            }));
-            if (data.status === "completed") {
-              toast.success("Ingestion complete", { description: data.filename });
-              // Refresh documents
-              getDocuments().then(setKbDocuments);
-              // Remove from progress after 5s
-              setTimeout(() => {
-                setIngestionProgress(prev => {
-                  const next = { ...prev };
-                  delete next[data.filename];
-                  return next;
-                });
-              }, 5000);
-            } else if (data.status === "failed") {
-              toast.error("Ingestion failed", { description: `${data.filename}: ${data.details}` });
-            }
             break;
 
           case "sources":
@@ -263,23 +227,6 @@ const Chat = () => {
     navigate("/login");
   };
 
-  const handleKBUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = ""; // Reset input
-    try {
-      toast.info("Uploading...", { description: file.name });
-      await uploadDocument(file);
-      toast.success("Upload started", { description: `${file.name} is being processed.` });
-      // Refresh document list after a short delay
-      setTimeout(async () => {
-        const docs = await getDocuments();
-        setKbDocuments(docs);
-      }, 2000);
-    } catch (err: any) {
-      toast.error("Upload failed", { description: err.message });
-    }
-  };
 
   // Sort: pinned first, then by timestamp
   const sortedConversations = [...conversations].sort((a, b) => {
@@ -768,26 +715,6 @@ const Chat = () => {
 
           {/* Sidebar Footer */}
           <div className="p-3 border-t border-sidebar-border space-y-1">
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="flex-1 justify-start gap-2 h-8 text-xs"
-                onClick={() => {
-                  setSourcesSidebarOpen(false);
-                  toast.info("Knowledge Base", { description: `${kbDocuments.length} documents available.` });
-                  setActiveSources({ docs: kbDocuments.map(d => d.filename), web: [], isKBMode: true });
-                  setSourcesSidebarOpen(true);
-                }}>
-                <Database className="w-3.5 h-3.5" /> Knowledge Base
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="Upload document"
-                onClick={() => kbFileInputRef.current?.click()}>
-                <Upload className="w-3.5 h-3.5" />
-              </Button>
-              <input ref={kbFileInputRef} type="file" className="hidden" accept=".pdf,.txt,.md,.csv" onChange={handleKBUpload} />
-            </div>
-            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
-              onClick={() => toast.info("My Documents", { description: "Manage your uploaded knowledge base documents." })}>
-              <FileText className="w-3.5 h-3.5" /> My Documents
-            </Button>
             <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
               onClick={() => setSettingsOpen(true)}>
               <Settings className="w-3.5 h-3.5" /> Settings
@@ -866,38 +793,7 @@ const Chat = () => {
 
         {/* Ingestion Progress Overlay */}
         <AnimatePresence>
-          {Object.entries(ingestionProgress).length > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-muted/30 border-b border-border overflow-hidden"
-            >
-              <div className="max-w-4xl mx-auto p-2 space-y-2">
-                {Object.entries(ingestionProgress).map(([filename, data]) => (
-                  <div key={filename} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-[10px] px-1">
-                      <span className="font-medium truncate flex items-center gap-2">
-                        <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                        {filename}
-                      </span>
-                      <span className="text-muted-foreground capitalize">
-                        {typeof data.status === "string" ? data.status : "Processing"}... {data.progress}%
-                      </span>
-                    </div>
-                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-primary"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${data.progress}%` }}
-                        transition={{ duration: 0.5 }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+
         </AnimatePresence>
 
         {/* Messages Area */}
@@ -1098,7 +994,7 @@ const Chat = () => {
               </div>
             </div>
             <p className="text-[9px] md:text-xs text-muted-foreground text-center mt-1.5 md:mt-2">
-              KnowledgeFlow AI uses RAG to search your knowledge base and provide accurate, source-backed answers.
+              KnowledgeFlow AI provides accurate, intelligent answers to your questions.
             </p>
           </form>
         </div>
@@ -1117,7 +1013,7 @@ const Chat = () => {
           <div className="h-12 px-3 border-b border-sidebar-border flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold">{activeSources.isKBMode ? "Knowledge Base" : "Sources"}</span>
+              <span className="text-sm font-semibold">Sources</span>
             </div>
             <button
               onClick={() => setSourcesSidebarOpen(false)}
@@ -1136,14 +1032,8 @@ const Chat = () => {
                 {activeSources.docs.map((doc, i) => (
                   <button
                     key={i}
-                    onClick={async () => {
-                      const docName = typeof doc === 'string' ? doc : (doc as any).documentName;
-                      try {
-                        const blobUrl = await fetchDocumentBlobUrl(docName);
-                        setViewingDoc({ name: docName, url: blobUrl });
-                      } catch {
-                        toast.error("Failed to load document");
-                      }
+                    onClick={() => {
+                      toast.info("Document viewer disabled as uploads were removed.");
                     }}
                     className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-sidebar-accent transition-colors group"
                   >
@@ -1204,14 +1094,8 @@ const Chat = () => {
                   {activeSources.docs.map((doc, i) => (
                     <button
                       key={i}
-                      onClick={async () => {
-                        const docName = typeof doc === 'string' ? doc : (doc as any).documentName;
-                        try {
-                          const blobUrl = await fetchDocumentBlobUrl(docName);
-                          setViewingDoc({ name: docName, url: blobUrl });
-                        } catch {
-                          toast.error("Failed to load document");
-                        }
+                      onClick={() => {
+                        toast.info("Document viewer disabled.");
                       }}
                       className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-sidebar-accent transition-colors group"
                     >
@@ -1266,7 +1150,7 @@ const Chat = () => {
                     <span className="text-sm font-semibold truncate max-w-[200px] md:max-w-md">
                       {typeof viewingDoc.name === 'string' ? viewingDoc.name : 'Document'}
                     </span>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Internal Knowledge Base</span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">AI Analysis</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1419,7 +1303,7 @@ const HeroSection = ({ onExampleClick }: { onExampleClick: (text: string) => voi
           transition={{ delay: 0.2 }}
           className="text-muted-foreground mb-5 md:mb-8 text-xs md:text-base px-2"
         >
-          Ask anything about your documents. I'll search the knowledge base and provide precise, source-backed answers.
+          Ask anything. I'm here to help you with information, analysis, or creative tasks.
         </motion.p>
 
         <motion.div

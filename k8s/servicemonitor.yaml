@@ -4,7 +4,7 @@ metadata:
   name: fastrag-backend
   namespace: fastrag
   labels:
-    release: prometheus
+    release: kube-prometheus-stack
 spec:
   namespaceSelector:
     matchNames:

@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: lightsspeed/rag-chatbot-frontend:v1.0.0
-        imagePullPolicy: IfNotPresent
+        image: lightsspeed/rag-chatbot-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
 ---

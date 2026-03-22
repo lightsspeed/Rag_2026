@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   backend:
+    image: lightsspeed/rag-chatbot-backend:latest
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
@@ -17,7 +18,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ./uploads:/app/uploads
       - ./data:/app/data
       - ./logs:/app/logs
     depends_on:
@@ -27,6 +27,7 @@ services:
       - rag_network
 
   frontend:
+    image: lightsspeed/rag-chatbot-frontend:latest
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile

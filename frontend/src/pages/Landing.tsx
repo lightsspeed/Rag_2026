@@ -157,8 +157,8 @@ const Landing = () => {
               transition={{ delay: 0.3 }}
               className="text-base md:text-xl text-muted-foreground mb-8 md:mb-12 max-w-2xl mx-auto leading-relaxed px-2"
             >
-              Harness the power of RAG-enhanced AI to answer questions from your documents.
-              Ask anything in natural language and get precise, source-backed answers instantly.
+              Harness the power of advanced AI to answer your questions and solve complex tasks.
+              Get precise, intelligent insights instantly through a conversational interface.
             </motion.p>
 
             <motion.div
@@ -268,8 +268,8 @@ const Landing = () => {
               },
               {
                 icon: Database,
-                title: "Multi-Format Ingestion",
-                description: "Upload PDFs, Markdown, CSV, and text files. The engine automatically chunks, embeds, and indexes everything.",
+                title: "Internal Knowledge",
+                description: "Leverage curated organizational data and internal insights to provide relevant and grounded information.",
               },
               {
                 icon: "💬",
@@ -330,8 +330,8 @@ const Landing = () => {
               {[
                 {
                   step: "01",
-                  title: "Upload Your Documents",
-                  description: "Drop in your PDFs, policies, reports, wikis, or any structured data. We handle ingestion and indexing automatically.",
+                  title: "Access the Console",
+                  description: "Launch the AI console to start exploring its capabilities. Our engine is ready to assist you right away.",
                   icon: Database,
                 },
                 {
@@ -517,7 +517,7 @@ const Landing = () => {
               {
                 icon: Lightbulb,
                 title: "Research Assistant",
-                description: "Upload research papers, market reports, or industry analyses and let the AI synthesize insights across hundreds of documents at once.",
+                description: "Get assistance with synthesizing complex information, analyzing market reports, or generating industry insights instantly.",
                 metric: "AI-powered synthesis",
               },
               {
@@ -565,10 +565,10 @@ const Landing = () => {
             className="bg-gradient-to-br from-primary/10 via-card to-accent/10 border border-border rounded-2xl md:rounded-3xl p-8 md:p-12 text-center max-w-4xl mx-auto"
           >
             <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold mb-3 md:mb-4">
-              Ready to Unlock Your Knowledge Base?
+              Ready to Experience KnowledgeFlow AI?
             </h2>
             <p className="text-muted-foreground mb-6 md:mb-8 max-w-lg mx-auto text-sm md:text-lg px-2">
-              Empower your entire team with AI-powered answers from the documents you already have.
+              Empower your entire team with intelligent, AI-powered insights and analysis.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4">
               <Button variant="hero" size="lg" className="w-full sm:w-auto" asChild>
@@ -598,7 +598,7 @@ const Landing = () => {
                 <span className="font-semibold text-base md:text-lg">KnowledgeFlow AI</span>
               </div>
               <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-                AI-powered knowledge retrieval for any team. Powered by RAG technology.
+                AI-powered intelligence and analysis for any team.
               </p>
             </div>
             <div>
@@ -613,7 +613,7 @@ const Landing = () => {
               <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">Resources</h4>
               <ul className="space-y-2 text-xs md:text-sm text-muted-foreground">
                 <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1.5"><FileCode className="w-3 h-3" />API Reference</a></li>
-                <li><Link to="/admin" className="hover:text-foreground transition-colors flex items-center gap-1.5"><Database className="w-3 h-3" />Knowledge Base</Link></li>
+                <li><Link to="/admin" className="hover:text-foreground transition-colors flex items-center gap-1.5"><Database className="w-3 h-3" />Admin Portal</Link></li>
                 <li><a href="#" className="hover:text-foreground transition-colors flex items-center gap-1.5"><Activity className="w-3 h-3" />Status Page</a></li>
                 <li><a href="https://github.com/lightsspeed/Rag_2026/releases" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1.5"><Globe className="w-3 h-3" />Release Notes</a></li>
               </ul>
